@@ -124,23 +124,28 @@ namespace NRediSearch
                     args.Add("FILTER".Literal());
                     args.Add(_filter);
                 }
-                if (_languageField != null) {
+                if (_languageField != null)
+                {
                     args.Add("LANGUAGE_FIELD".Literal());
                     args.Add(_languageField);
                 }
-                if (_language != null) {
+                if (_language != null)
+                {
                     args.Add("LANGUAGE".Literal());
                     args.Add(_language);
                 }
-                if (_scoreField != null) {
+                if (_scoreField != null)
+                {
                     args.Add("SCORE_FIELD".Literal());
                     args.Add(_scoreField);
                 }
-                if (_score != 1.0) {
+                if (_score != 1.0)
+                {
                     args.Add("SCORE".Literal());
                     args.Add(_score.ToString());
                 }
-                if (_payloadField != null) {
+                if (_payloadField != null)
+                {
                     args.Add("PAYLOAD_FIELD".Literal());
                     args.Add(_payloadField);
                 }
@@ -1035,7 +1040,7 @@ namespace NRediSearch
 
             var result = new string[suggestions.Length];
 
-            for(var i = 0; i < suggestions.Length; i++)
+            for (var i = 0; i < suggestions.Length; i++)
             {
                 result[i] = suggestions[i].String;
             }
@@ -1497,14 +1502,16 @@ namespace NRediSearch
             return suggestions;
         }
 
-        private static IList<string> SerializeParameters(Dictionary<String, RedisValue> parameters) {
+        private static IList<string> SerializeParameters(Dictionary<String, RedisValue> parameters)
+        {
             var paramList = new List<string>();
-            if(parameters is null) {
+            if (parameters is null)
+            {
                 return paramList;
             }
             paramList.Add("PARAMS");
-            paramList.Add((parameters.Count*2).ToString());
-            foreach ( KeyValuePair<string, RedisValue> pair in parameters)
+            paramList.Add((parameters.Count * 2).ToString());
+            foreach (KeyValuePair<string, RedisValue> pair in parameters)
             {
                 paramList.Add(pair.Key);
                 paramList.Add(pair.Value.ToString());

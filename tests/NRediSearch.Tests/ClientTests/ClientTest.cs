@@ -17,13 +17,16 @@ namespace NRediSearch.Tests.ClientTests
     {
         public ClientTest(ITestOutputHelper output) : base(output) { }
 
-        private long getModuleSearchVersion() {
+        private long getModuleSearchVersion()
+        {
             Client cl = GetClient();
             var modules = (RedisResult[])Db.Execute("MODULE", "LIST");
             long version = 0;
-            foreach (var module in modules) {
+            foreach (var module in modules)
+            {
                 var result = (RedisResult[])module;
-                if (result[1].ToString() == ("search")) {
+                if (result[1].ToString() == ("search"))
+                {
                     version = (long)result[3];
                 }
             }
@@ -212,9 +215,10 @@ namespace NRediSearch.Tests.ClientTests
             Schema sc = new Schema().AddTextField("title");
 
             Assert.True(cl.CreateIndex(sc, new ConfiguredIndexOptions().SetTemporaryTime(4).SetMaxTextFields()));
-            long ttl = (long) Db.Execute("FT.DEBUG", "TTL", "idx");
-            while (ttl > 2) {
-                ttl = (long) Db.Execute("FT.DEBUG", "TTL", "idx");
+            long ttl = (long)Db.Execute("FT.DEBUG", "TTL", "idx");
+            while (ttl > 2)
+            {
+                ttl = (long)Db.Execute("FT.DEBUG", "TTL", "idx");
                 Thread.Sleep(10);
             }
 
@@ -223,7 +227,7 @@ namespace NRediSearch.Tests.ClientTests
                 { "title", "hello world foo bar to be or not to be" }
             };
             Assert.True(cl.AddDocument("doc1", fields));
-            ttl = (long) Db.Execute("FT.DEBUG", "TTL", "idx");
+            ttl = (long)Db.Execute("FT.DEBUG", "TTL", "idx");
             Assert.True(ttl > 2);
         }
 
@@ -373,7 +377,7 @@ namespace NRediSearch.Tests.ClientTests
             Client cl = GetClient();
             Schema sc = new Schema().AddTextField("title", 1.0);
             ConfiguredIndexOptions options = new ConfiguredIndexOptions(
-                new IndexDefinition( prefixes: new string[]{cl.IndexName}));
+                new IndexDefinition(prefixes: new string[] { cl.IndexName }));
             Assert.True(cl.CreateIndex(sc, options));
 
             RedisKey hashKey = (string)cl.IndexName + ":foo";
@@ -943,16 +947,20 @@ namespace NRediSearch.Tests.ClientTests
         }
 
         [Fact]
-        public void TestGetTagFieldUnf() {
+        public void TestGetTagFieldUnf()
+        {
             // Add version check
 
             Client cl = GetClient();
 
             // Check that UNF can't be given to non-sortable filed
-            try {
+            try
+            {
                 var temp = new Schema().AddField(new TextField("non-sortable-unf", 1.0, sortable: false, unNormalizedForm: true));
                 Assert.True(false);
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 Assert.True(true);
             }
 
@@ -962,7 +970,7 @@ namespace NRediSearch.Tests.ClientTests
             Db.Execute("HSET", "doc1", "txt", "FOO", "txt_unf", "FOO", "tag", "FOO", "tag_unf", "FOO");
 
             AggregationBuilder r = new AggregationBuilder()
-                    .GroupBy(new List<string> {"@txt", "@txt_unf", "@tag", "@tag_unf"}, new List<Aggregation.Reducers.Reducer> {});
+                    .GroupBy(new List<string> { "@txt", "@txt_unf", "@tag", "@tag_unf" }, new List<Aggregation.Reducers.Reducer> { });
 
             AggregationResult res = cl.Aggregate(r);
             var results = res.GetResults()[0];
@@ -1052,16 +1060,17 @@ namespace NRediSearch.Tests.ClientTests
         [Fact]
         public void TestWithFieldNames()
         {
-            if (getModuleSearchVersion() <= 20200) {
+            if (getModuleSearchVersion() <= 20200)
+            {
                 return;
             }
 
             Client cl = GetClient();
-            IndexDefinition defenition = new IndexDefinition(prefixes: new string[] {"student:", "pupil:"});
+            IndexDefinition defenition = new IndexDefinition(prefixes: new string[] { "student:", "pupil:" });
             Schema sc = new Schema().AddTextField(FieldName.Of("first").As("given")).AddTextField(FieldName.Of("last"));
             Assert.True(cl.CreateIndex(sc, new ConfiguredIndexOptions(defenition)));
 
-            var docsIds = new string[] {"student:111", "pupil:222", "student:333", "teacher:333"};
+            var docsIds = new string[] { "student:111", "pupil:222", "student:333", "teacher:333" };
             var docsData = new Dictionary<string, RedisValue>[] {
                 new Dictionary<string, RedisValue> {
                     { "first", "Joen" },
@@ -1085,7 +1094,8 @@ namespace NRediSearch.Tests.ClientTests
                 }
             };
 
-            for (int i = 0; i < docsIds.Length; i++) {
+            for (int i = 0; i < docsIds.Length; i++)
+            {
                 Assert.True(cl.AddDocument(docsIds[i], docsData[i]));
             }
 
@@ -1111,7 +1121,8 @@ namespace NRediSearch.Tests.ClientTests
         [Fact]
         public void TestReturnWithFieldNames()
         {
-            if (getModuleSearchVersion() <= 20200) {
+            if (getModuleSearchVersion() <= 20200)
+            {
                 return;
             }
 
@@ -1138,12 +1149,13 @@ namespace NRediSearch.Tests.ClientTests
         [Fact]
         public void TestJsonIndex()
         {
-            if (getModuleSearchVersion() <= 20200) {
+            if (getModuleSearchVersion() <= 20200)
+            {
                 return;
             }
 
             Client cl = GetClient();
-            IndexDefinition defenition = new IndexDefinition(prefixes: new string[] {"king:"} ,type: IndexDefinition.IndexType.Json);
+            IndexDefinition defenition = new IndexDefinition(prefixes: new string[] { "king:" }, type: IndexDefinition.IndexType.Json);
             Schema sc = new Schema().AddTextField("$.name");
             Assert.True(cl.CreateIndex(sc, new ConfiguredIndexOptions(defenition)));
 
@@ -1179,7 +1191,7 @@ namespace NRediSearch.Tests.ClientTests
             }));
 
             // Query
-            SearchResult res = cl.Search(new Query("@name:($name1 | $name2 )"), new Dictionary<string, RedisValue>{{"name1","Alice"}, {"name2","Bob"}});
+            SearchResult res = cl.Search(new Query("@name:($name1 | $name2 )"), new Dictionary<string, RedisValue> { { "name1", "Alice" }, { "name2", "Bob" } });
             Assert.Equal(2, res.TotalResults);
             Assert.Equal("doc1", res.Documents[0].Id);
             Assert.Equal("doc2", res.Documents[1].Id);
@@ -1207,7 +1219,7 @@ namespace NRediSearch.Tests.ClientTests
             }));
 
             // Query
-            SearchResult res = cl.Search(new Query("@numval:[$min $max]"), new Dictionary<string, RedisValue>{{"min",101}, {"max",102}});
+            SearchResult res = cl.Search(new Query("@numval:[$min $max]"), new Dictionary<string, RedisValue> { { "min", 101 }, { "max", 102 } });
             Assert.Equal(2, res.TotalResults);
             Assert.Equal("doc1", res.Documents[0].Id);
             Assert.Equal("doc2", res.Documents[1].Id);
@@ -1235,7 +1247,7 @@ namespace NRediSearch.Tests.ClientTests
             }));
 
             // Query
-            SearchResult res = cl.Search(new Query("@g:[$lon $lat $radius $units]"), new Dictionary<string, RedisValue>{{"lat","34.95126"}, {"lon","29.69465"}, {"radius", 10}, {"units", "km"}});
+            SearchResult res = cl.Search(new Query("@g:[$lon $lat $radius $units]"), new Dictionary<string, RedisValue> { { "lat", "34.95126" }, { "lon", "29.69465" }, { "radius", 10 }, { "units", "km" } });
             Assert.Equal(3, res.TotalResults);
             Assert.Equal("doc1", res.Documents[0].Id);
             Assert.Equal("doc2", res.Documents[1].Id);
