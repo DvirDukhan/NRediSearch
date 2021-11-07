@@ -402,13 +402,14 @@ namespace NRediSearch
         /// </summary>
         /// <param name="q">a <see cref="Query"/> object with the query string and optional parameters</param>
         /// <returns>a <see cref="SearchResult"/> object with the results</returns>
-        public SearchResult Search(Query q)
+        public SearchResult Search(Query q, Dictionary<string, RedisValue> parameters = null)
         {
             var args = new List<object>
             {
                 _boxedIndexName
             };
             q.SerializeRedisArgs(args);
+            args.AddRange(SerializeParameters(parameters));
 
             var resp = (RedisResult[])DbSync.Execute("FT.SEARCH", args);
             return new SearchResult(resp, !q.NoContent, q.WithScores, q.WithPayloads, q.ExplainScore);
@@ -419,13 +420,15 @@ namespace NRediSearch
         /// </summary>
         /// <param name="q">a <see cref="Query"/> object with the query string and optional parameters</param>
         /// <returns>a <see cref="SearchResult"/> object with the results</returns>
-        public async Task<SearchResult> SearchAsync(Query q)
+        public async Task<SearchResult> SearchAsync(Query q, Dictionary<string, RedisValue> parameters = null)
         {
             var args = new List<object>
             {
                 _boxedIndexName
             };
             q.SerializeRedisArgs(args);
+            args.AddRange(SerializeParameters(parameters));
+
 
             var resp = (RedisResult[])await _db.ExecuteAsync("FT.SEARCH", args).ConfigureAwait(false);
             return new SearchResult(resp, !q.NoContent, q.WithScores, q.WithPayloads, q.ExplainScore);
@@ -1492,6 +1495,21 @@ namespace NRediSearch
             }
 
             return suggestions;
+        }
+
+        private static IList<string> SerializeParameters(Dictionary<String, RedisValue> parameters) {
+            var paramList = new List<string>();
+            if(parameters is null) {
+                return paramList;
+            }
+            paramList.Add("PARAMS");
+            paramList.Add((parameters.Count*2).ToString());
+            foreach ( KeyValuePair<string, RedisValue> pair in parameters)
+            {
+                paramList.Add(pair.Key);
+                paramList.Add(pair.Value.ToString());
+            }
+            return paramList;
         }
     }
 }

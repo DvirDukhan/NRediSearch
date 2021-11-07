@@ -1156,5 +1156,90 @@ namespace NRediSearch.Tests.ClientTests
             Assert.Equal("king:1", res.Documents[0].Id);
             Assert.Equal("{\"name\":\"henry\"}", res.Documents[0]["json"]);
         }
+
+        [Fact]
+        public void TestTextParams()
+        {
+            Client cl = GetClient();
+            Schema sc = new Schema().AddTextField("name", 1.0);
+            Assert.True(cl.CreateIndex(sc, new ConfiguredIndexOptions()));
+
+            Assert.True(cl.AddDocument("doc1", new Dictionary<string, RedisValue>
+            {
+                { "name", "Alice" }
+            }));
+            Assert.True(cl.AddDocument("doc2", new Dictionary<string, RedisValue>
+            {
+                { "name", "Bob" }
+            }));
+
+            Assert.True(cl.AddDocument("doc3", new Dictionary<string, RedisValue>
+            {
+                { "name", "Carol" }
+            }));
+
+            // Query
+            SearchResult res = cl.Search(new Query("@name:($name1 | $name2 )"), new Dictionary<string, RedisValue>{{"name1","Alice"}, {"name2","Bob"}});
+            Assert.Equal(2, res.TotalResults);
+            Assert.Equal("doc1", res.Documents[0].Id);
+            Assert.Equal("doc2", res.Documents[1].Id);
+        }
+
+        [Fact]
+        public void TestNumericParams()
+        {
+            Client cl = GetClient();
+            Schema sc = new Schema().AddNumericField("numval");
+            Assert.True(cl.CreateIndex(sc, new ConfiguredIndexOptions()));
+
+            Assert.True(cl.AddDocument("doc1", new Dictionary<string, RedisValue>
+            {
+                { "numval", 101 }
+            }));
+            Assert.True(cl.AddDocument("doc2", new Dictionary<string, RedisValue>
+            {
+                { "numval", 102 }
+            }));
+
+            Assert.True(cl.AddDocument("doc3", new Dictionary<string, RedisValue>
+            {
+                { "numval", 103 }
+            }));
+
+            // Query
+            SearchResult res = cl.Search(new Query("@numval:[$min $max]"), new Dictionary<string, RedisValue>{{"min",101}, {"max",102}});
+            Assert.Equal(2, res.TotalResults);
+            Assert.Equal("doc1", res.Documents[0].Id);
+            Assert.Equal("doc2", res.Documents[1].Id);
+        }
+
+        [Fact]
+        public void TestGeoParams()
+        {
+            Client cl = GetClient();
+            Schema sc = new Schema().AddGeoField("g");
+            Assert.True(cl.CreateIndex(sc, new ConfiguredIndexOptions()));
+
+            Assert.True(cl.AddDocument("doc1", new Dictionary<string, RedisValue>
+            {
+                { "g", "29.69465, 34.95126" }
+            }));
+            Assert.True(cl.AddDocument("doc2", new Dictionary<string, RedisValue>
+            {
+                { "g", "29.69350, 34.94737" }
+            }));
+
+            Assert.True(cl.AddDocument("doc3", new Dictionary<string, RedisValue>
+            {
+                { "g", "29.68746, 34.94882" }
+            }));
+
+            // Query
+            SearchResult res = cl.Search(new Query("@g:[$lon $lat $radius $units]"), new Dictionary<string, RedisValue>{{"lat","34.95126"}, {"lon","29.69465"}, {"radius", 10}, {"units", "km"}});
+            Assert.Equal(3, res.TotalResults);
+            Assert.Equal("doc1", res.Documents[0].Id);
+            Assert.Equal("doc2", res.Documents[1].Id);
+            Assert.Equal("doc3", res.Documents[2].Id);
+        }
     }
 }
